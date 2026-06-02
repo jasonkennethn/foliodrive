@@ -10,6 +10,7 @@ class Profile(models.Model):
     allocated_password = models.CharField(max_length=128, blank=True, default='')
     name = models.CharField(max_length=200, default='Your Name')
     custom_intro = models.CharField(max_length=200, default="Hello, I'm")
+    bio = models.TextField(blank=True, default='')
     role = models.CharField(max_length=200, default="Full Stack Developer")
     location = models.CharField(max_length=200, default="New York, USA")
     tagline = models.CharField(max_length=500, blank=True, default='')

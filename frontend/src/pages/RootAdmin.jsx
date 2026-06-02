@@ -109,7 +109,13 @@ export default function RootAdmin() {
   }
 
   return (
-    <div className="admin-panel" style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
+    <div className="admin-panel" style={{
+      minHeight: '100vh',
+      background: `radial-gradient(circle at 10% 20%, color-mix(in srgb, var(--accent-color) 8%, transparent) 0%, transparent 45%),
+                  radial-gradient(circle at 90% 80%, color-mix(in srgb, var(--accent-color) 6%, transparent) 0%, transparent 45%),
+                  var(--bg-primary)`,
+      backgroundAttachment: 'fixed',
+    }}>
       {/* Root Admin Header */}
       <header
         style={{
@@ -118,15 +124,13 @@ export default function RootAdmin() {
           left: 0,
           right: 0,
           height: '64px',
-          background: 'var(--bg-surface)',
-          borderBottom: '1px solid var(--border-color)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '0 32px',
           zIndex: 100,
         }}
-        className="root-admin-header"
+        className="root-admin-header glass"
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <FiUsers size={20} style={{ color: 'var(--accent-color)' }} />
@@ -175,12 +179,12 @@ export default function RootAdmin() {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
+            className="glass"
             style={{
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-color)',
+              background: 'var(--glass-bg)',
               borderRadius: 'var(--radius-xl)',
               padding: '32px',
-              boxShadow: 'var(--shadow-md)',
+              boxShadow: 'var(--shadow-xl)',
             }}
           >
             <h2
@@ -288,14 +292,13 @@ export default function RootAdmin() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
             style={{
-              background: 'var(--bg-surface)',
-              border: '1px solid var(--border-color)',
+              background: 'var(--glass-bg)',
               borderRadius: 'var(--radius-xl)',
               padding: '32px',
-              boxShadow: 'var(--shadow-md)',
+              boxShadow: 'var(--shadow-xl)',
               minHeight: '400px',
             }}
-            className="root-users-card"
+            className="root-users-card glass"
           >
             <h2
               style={{

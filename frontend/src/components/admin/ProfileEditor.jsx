@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import api from '../../api/axiosConfig';
+import AIAssistant from './AIAssistant';
 import { FiUser, FiCamera, FiSave, FiCheck } from 'react-icons/fi';
 
 export default function ProfileEditor({ onSaved }) {
@@ -41,6 +42,7 @@ export default function ProfileEditor({ onSaved }) {
       const formData = new FormData();
       formData.append('name', profile.name);
       formData.append('custom_intro', profile.custom_intro || "Hello, I'm");
+      formData.append('bio', profile.bio || '');
       formData.append('role', profile.role || '');
       formData.append('location', profile.location || '');
       formData.append('tagline', profile.tagline || '');
@@ -229,13 +231,41 @@ export default function ProfileEditor({ onSaved }) {
 
         {/* Tagline */}
         <div>
-          <label className="label">Short Bio / Tagline</label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <label className="label" style={{ margin: 0 }}>Short Bio / Tagline</label>
+            <AIAssistant
+              fieldType="tagline"
+              currentText={profile.tagline || ''}
+              onApply={(val) => setProfile((prev) => ({ ...prev, tagline: val }))}
+              role={profile.role}
+            />
+          </div>
           <input
             type="text"
             className="input-field"
             value={profile.tagline || ''}
             onChange={(e) => setProfile((prev) => ({ ...prev, tagline: e.target.value }))}
             placeholder="A short tagline or summary"
+          />
+        </div>
+
+        {/* Professional Summary / Bio */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <label className="label" style={{ margin: 0 }}>Professional Summary / Bio</label>
+            <AIAssistant
+              fieldType="bio"
+              currentText={profile.bio || ''}
+              onApply={(val) => setProfile((prev) => ({ ...prev, bio: val }))}
+              role={profile.role}
+            />
+          </div>
+          <textarea
+            className="textarea-field"
+            value={profile.bio || ''}
+            onChange={(e) => setProfile((prev) => ({ ...prev, bio: e.target.value }))}
+            placeholder="Enter your detailed professional summary/bio for the resume..."
+            rows={5}
           />
         </div>
 

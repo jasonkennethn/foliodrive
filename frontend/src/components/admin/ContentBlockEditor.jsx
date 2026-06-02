@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, Reorder, useDragControls } from 'framer-motion';
 import api from '../../api/axiosConfig';
+import AIAssistant from './AIAssistant';
 import {
   FiPlus, FiTrash2, FiArrowLeft, FiSave, FiCheck,
   FiType, FiCreditCard, FiCode, FiClock, FiImage, FiLink,
@@ -14,6 +15,154 @@ const BLOCK_TYPES = [
   { value: 'gallery', label: 'Gallery', icon: FiImage, description: 'Image with optional caption' },
   { value: 'embed', label: 'Embed', icon: FiLink, description: 'Embed a URL (YouTube, etc.)' },
 ];
+
+function BlockRow({
+  block,
+  editingBlock,
+  setEditingBlock,
+  deleteBlock,
+  saveBlock,
+  saving,
+  renderBlockForm,
+}) {
+  const dragControls = useDragControls();
+  const typeInfo = BLOCK_TYPES.find((bt) => bt.value === block.block_type);
+  const Icon = typeInfo?.icon || FiType;
+  const isEditing = editingBlock?.id === block.id;
+
+  return (
+    <Reorder.Item
+      value={block}
+      id={block.id.toString()}
+      dragListener={false}
+      dragControls={dragControls}
+      style={{
+        padding: '16px',
+        background: 'var(--bg-surface)',
+        border: `1px solid ${isEditing ? 'var(--accent-color)' : 'var(--border-color)'}`,
+        borderRadius: 'var(--radius-md)',
+        position: 'relative',
+        touchAction: 'none',
+      }}
+      className="deletable-wrapper"
+    >
+      {/* Delete overlay button */}
+      <button
+        className="delete-btn-overlay"
+        type="button"
+        onClick={() => deleteBlock(block.id)}
+        title="Delete this block"
+      >
+        <FiTrash2 size={14} />
+      </button>
+
+      <div style={{ display: 'flex', gap: '12px', alignItems: isEditing ? 'flex-start' : 'center' }}>
+        {/* Drag handle */}
+        {!isEditing && (
+          <div
+            onPointerDown={(e) => dragControls.start(e)}
+            style={{
+              cursor: 'grab',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: 'var(--text-muted)',
+              padding: '4px',
+              borderRadius: 'var(--radius-sm)',
+              marginRight: '-4px',
+            }}
+            className="drag-handle"
+            title="Drag to reorder"
+          >
+            <svg
+              width="10"
+              height="16"
+              viewBox="0 0 12 18"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+            >
+              <path d="M4 3h.01M8 3h.01M4 9h.01M8 9h.01M4 15h.01M8 15h.01" />
+            </svg>
+          </div>
+        )}
+
+        <div style={{ flex: 1 }}>
+          {/* Block Header / Toggle */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              marginBottom: isEditing ? '16px' : '0',
+              cursor: isEditing ? 'default' : 'pointer',
+              paddingRight: '28px',
+            }}
+            onClick={() => !isEditing && setEditingBlock({ ...block })}
+          >
+            <Icon size={16} style={{ color: 'var(--accent-color)' }} />
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+              {typeInfo?.label || block.block_type}
+            </span>
+            {block.title && (
+              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                — {block.title}
+              </span>
+            )}
+            {block.timeline_title && (
+              <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
+                — {block.timeline_title}
+              </span>
+            )}
+            {!isEditing && (
+              <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
+                Click to edit
+              </span>
+            )}
+          </div>
+
+          {/* Editing form */}
+          <AnimatePresence>
+            {isEditing && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                {renderBlockForm(editingBlock, setEditingBlock)}
+                <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+                  <button
+                    className="btn-accent"
+                    type="button"
+                    onClick={() => saveBlock(editingBlock)}
+                    disabled={saving}
+                    style={{ fontSize: '13px', padding: '8px 16px' }}
+                  >
+                    {saving ? 'Saving...' : (
+                      <>
+                        <FiSave size={14} />
+                        Save
+                      </>
+                    )}
+                  </button>
+                  <button
+                    className="btn-ghost"
+                    type="button"
+                    onClick={() => setEditingBlock(null)}
+                    style={{ fontSize: '13px', padding: '8px 16px' }}
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </Reorder.Item>
+  );
+}
 
 export default function ContentBlockEditor({ section, onBack, onChanged }) {
   const [blocks, setBlocks] = useState([]);
@@ -36,6 +185,18 @@ export default function ContentBlockEditor({ section, onBack, onChanged }) {
       console.error('Failed to fetch blocks:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleReorder = async (newBlocks) => {
+    setBlocks(newBlocks);
+    try {
+      await api.patch('/blocks/reorder/', {
+        order: newBlocks.map((b) => b.id),
+      });
+      if (onChanged) onChanged();
+    } catch (err) {
+      console.error('Failed to reorder blocks:', err);
     }
   };
 
@@ -117,7 +278,15 @@ export default function ContentBlockEditor({ section, onBack, onChanged }) {
               />
             </div>
             <div>
-              <label className="label">Description</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label className="label" style={{ margin: 0 }}>Description</label>
+                <AIAssistant
+                  fieldType="description"
+                  currentText={block.description || ''}
+                  onApply={(val) => setBlock({ ...block, description: val })}
+                  role={section.title}
+                />
+              </div>
               <textarea
                 className="textarea-field"
                 value={block.description || ''}
@@ -183,7 +352,15 @@ export default function ContentBlockEditor({ section, onBack, onChanged }) {
         {/* Paragraph fields */}
         {type === 'paragraph' && (
           <div>
-            <label className="label">Text</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label className="label" style={{ margin: 0 }}>Text</label>
+              <AIAssistant
+                fieldType="description"
+                currentText={block.text || ''}
+                onApply={(val) => setBlock({ ...block, text: val })}
+                role={section.title}
+              />
+            </div>
             <textarea
               className="textarea-field"
               value={block.text || ''}
@@ -234,7 +411,15 @@ export default function ContentBlockEditor({ section, onBack, onChanged }) {
               />
             </div>
             <div>
-              <label className="label">Description</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+                <label className="label" style={{ margin: 0 }}>Description</label>
+                <AIAssistant
+                  fieldType="bullets"
+                  currentText={block.timeline_description || ''}
+                  onApply={(val) => setBlock({ ...block, timeline_description: val })}
+                  role={section.title}
+                />
+              </div>
               <textarea
                 className="textarea-field"
                 value={block.timeline_description || ''}
@@ -471,99 +656,25 @@ export default function ContentBlockEditor({ section, onBack, onChanged }) {
           <p style={{ fontSize: '13px', marginTop: '4px' }}>Click "Add Block" to add content to this section</p>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {blocks.map((block) => {
-            const typeInfo = BLOCK_TYPES.find((bt) => bt.value === block.block_type);
-            const Icon = typeInfo?.icon || FiType;
-            const isEditing = editingBlock?.id === block.id;
-
-            return (
-              <motion.div
-                key={block.id}
-                layout
-                className="deletable-wrapper"
-                style={{
-                  padding: '16px',
-                  background: 'var(--bg-surface)',
-                  border: `1px solid ${isEditing ? 'var(--accent-color)' : 'var(--border-color)'}`,
-                  borderRadius: 'var(--radius-md)',
-                }}
-              >
-                {/* Delete overlay button */}
-                <button
-                  className="delete-btn-overlay"
-                  onClick={() => deleteBlock(block.id)}
-                  title="Delete this block"
-                >
-                  <FiTrash2 size={14} />
-                </button>
-
-                {/* Block header */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    marginBottom: isEditing ? '16px' : '0',
-                    cursor: isEditing ? 'default' : 'pointer',
-                    paddingRight: '28px',
-                  }}
-                  onClick={() => !isEditing && setEditingBlock({ ...block })}
-                >
-                  <Icon size={16} style={{ color: 'var(--accent-color)' }} />
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {typeInfo?.label || block.block_type}
-                  </span>
-                  {block.title && (
-                    <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>
-                      — {block.title}
-                    </span>
-                  )}
-                  {!isEditing && (
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)', marginLeft: 'auto' }}>
-                      Click to edit
-                    </span>
-                  )}
-                </div>
-
-                {/* Editing form */}
-                <AnimatePresence>
-                  {isEditing && (
-                    <motion.div
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: 'auto' }}
-                      exit={{ opacity: 0, height: 0 }}
-                    >
-                      {renderBlockForm(editingBlock, setEditingBlock)}
-                      <div style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
-                        <button
-                          className="btn-accent"
-                          onClick={() => saveBlock(editingBlock)}
-                          disabled={saving}
-                          style={{ fontSize: '13px', padding: '8px 16px' }}
-                        >
-                          {saving ? 'Saving...' : (
-                            <>
-                              <FiSave size={14} />
-                              Save
-                            </>
-                          )}
-                        </button>
-                        <button
-                          className="btn-ghost"
-                          onClick={() => setEditingBlock(null)}
-                          style={{ fontSize: '13px', padding: '8px 16px' }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            );
-          })}
-        </div>
+        <Reorder.Group
+          axis="y"
+          values={blocks}
+          onReorder={handleReorder}
+          style={{ display: 'flex', flexDirection: 'column', gap: '12px', listStyle: 'none', padding: 0, margin: 0 }}
+        >
+          {blocks.map((block) => (
+            <BlockRow
+              key={block.id}
+              block={block}
+              editingBlock={editingBlock}
+              setEditingBlock={setEditingBlock}
+              deleteBlock={deleteBlock}
+              saveBlock={saveBlock}
+              saving={saving}
+              renderBlockForm={renderBlockForm}
+            />
+          ))}
+        </Reorder.Group>
       )}
 
       {/* Saved toast */}

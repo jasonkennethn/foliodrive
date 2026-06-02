@@ -367,7 +367,10 @@ body {
 /* ─── Admin Panel ───────────────────────────────────────────────── */
 .admin-panel {
   min-height: 100vh;
-  background: var(--bg-primary);
+  background: radial-gradient(circle at 10% 20%, color-mix(in srgb, var(--accent-color) 8%, transparent) 0%, transparent 45%),
+              radial-gradient(circle at 90% 80%, color-mix(in srgb, var(--accent-color) 6%, transparent) 0%, transparent 45%),
+              var(--bg-primary);
+  background-attachment: fixed;
 }
 
 .admin-sidebar-item {
@@ -493,5 +496,42 @@ body {
 @media (hover: none) {
   .delete-btn-overlay {
     opacity: 1 !important;
+  }
+}
+
+/* ─── Back to Top Button ────────────────────────────────────────── */
+.back-to-top {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--accent-color);
+  box-shadow: var(--shadow-lg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  transition: all var(--transition-fast);
+}
+.back-to-top:hover {
+  background: var(--accent-color);
+  color: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--accent-color) 30%, transparent);
+}
+.back-to-top:active {
+  transform: translateY(-1px);
+}
+@media (max-width: 768px) {
+  .back-to-top {
+    bottom: 16px;
+    right: 16px;
+    width: 38px;
+    height: 38px;
   }
 }

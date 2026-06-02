@@ -1,9 +1,11 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { usePortfolio } from '../context/PortfolioContext';
 import Navbar from '../components/layout/Navbar';
 import HeroSection from '../components/portfolio/HeroSection';
 import SectionRenderer from '../components/portfolio/SectionRenderer';
+import { FiArrowUp } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function Portfolio() {
   const { username } = useParams();
@@ -22,6 +24,20 @@ export default function Portfolio() {
       document.title = `${profile.name} — Portfolio`;
     }
   }, [profile]);
+
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 400);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   if (loading) {
     return (
@@ -103,6 +119,22 @@ export default function Portfolio() {
           No sections added yet. Visit <strong>/master-admin</strong> to start building your portfolio.
         </div>
       )}
+
+      <AnimatePresence>
+        {showBackToTop && (
+          <motion.button
+            className="back-to-top"
+            onClick={scrollToTop}
+            initial={{ opacity: 0, scale: 0.8, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.8, y: 10 }}
+            transition={{ duration: 0.2 }}
+            title="Back to Top"
+          >
+            <FiArrowUp size={20} />
+          </motion.button>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

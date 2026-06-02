@@ -93,7 +93,7 @@ export default function SectionRenderer({ section, index }) {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
               gap: '24px',
               marginBottom: galleryBlocks.length > 0 ? '40px' : '0',
             }}
@@ -117,7 +117,7 @@ export default function SectionRenderer({ section, index }) {
           <div
             style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 250px), 1fr))',
               gap: '16px',
             }}
           >

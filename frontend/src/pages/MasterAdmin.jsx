@@ -9,7 +9,7 @@ import ContentBlockEditor from '../components/admin/ContentBlockEditor';
 import ThemeEditor from '../components/admin/ThemeEditor';
 import {
   FiUser, FiLayers, FiDroplet, FiLogOut, FiExternalLink,
-  FiMenu, FiX,
+  FiMenu, FiX, FiFileText,
 } from 'react-icons/fi';
 
 const TABS = [
@@ -89,15 +89,13 @@ export default function MasterAdmin() {
     <div className="admin-panel">
       {/* Mobile/Tablet header */}
       <div
-        className="admin-mobile-header"
+        className="admin-mobile-header glass"
         style={{
           position: 'fixed',
           top: 0,
           left: 0,
           right: 0,
           height: '56px',
-          background: 'var(--bg-surface)',
-          borderBottom: '1px solid var(--border-color)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
@@ -122,8 +120,6 @@ export default function MasterAdmin() {
           style={{
             width: '260px',
             flexShrink: 0,
-            borderRight: '1px solid var(--border-color)',
-            background: 'var(--bg-surface)',
             padding: '24px 16px',
             display: 'flex',
             flexDirection: 'column',
@@ -134,7 +130,7 @@ export default function MasterAdmin() {
             zIndex: 99,
             transition: 'left var(--transition-base)',
           }}
-          className="admin-sidebar"
+          className="admin-sidebar glass"
         >
           {/* Branding */}
           <div style={{ marginBottom: '32px', paddingTop: '8px' }}>
@@ -187,6 +183,16 @@ export default function MasterAdmin() {
               <FiExternalLink size={18} />
               View Portfolio
             </a>
+            <a
+              href={`/${username}/showcase`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="admin-sidebar-item"
+              style={{ textDecoration: 'none' }}
+            >
+              <FiFileText size={18} />
+              ATS Resume
+            </a>
             <button className="admin-sidebar-item" onClick={handleLogout}>
               <FiLogOut size={18} />
               Sign Out
@@ -212,6 +218,13 @@ export default function MasterAdmin() {
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.2 }}
+            className="glass"
+            style={{
+              padding: 'clamp(16px, 4vw, 32px)',
+              borderRadius: 'var(--radius-xl)',
+              boxShadow: 'var(--shadow-xl)',
+              background: 'var(--glass-bg)',
+            }}
           >
             {renderContent()}
           </motion.div>

@@ -23,7 +23,10 @@ export default function LoginGate({ onAuthenticated, requiredRole = 'staff' }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background: 'var(--bg-primary)',
+        background: `radial-gradient(circle at 10% 20%, color-mix(in srgb, var(--accent-color) 8%, transparent) 0%, transparent 45%),
+                    radial-gradient(circle at 90% 80%, color-mix(in srgb, var(--accent-color) 6%, transparent) 0%, transparent 45%),
+                    var(--bg-primary)`,
+        backgroundAttachment: 'fixed',
         padding: '20px',
       }}
     >
@@ -31,11 +34,11 @@ export default function LoginGate({ onAuthenticated, requiredRole = 'staff' }) {
         initial={{ opacity: 0, y: 30, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="glass"
         style={{
           width: '100%',
           maxWidth: '400px',
-          background: 'var(--bg-surface)',
-          border: '1px solid var(--border-color)',
+          background: 'var(--glass-bg)',
           borderRadius: 'var(--radius-xl)',
           padding: 'clamp(20px, 8vw, 40px)',
           boxShadow: 'var(--shadow-xl)',

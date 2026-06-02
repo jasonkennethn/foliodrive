@@ -230,3 +230,111 @@ class UserAdminDestroyView(generics.DestroyAPIView):
             )
         self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+import urllib.request
+import urllib.error
+import json
+from django.conf import settings
+
+class AIWriterView(views.APIView):
+    """POST /api/ai/assist/ — calls Gemini API to assist the user with resume writing and ATS optimization."""
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        field_type = request.data.get('field_type', '')
+        current_text = request.data.get('current_text', '').strip()
+        role = request.data.get('role', 'Professional').strip()
+        
+        if not field_type or not current_text:
+            return Response(
+                {"error": "Both 'field_type' and 'current_text' are required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        api_key = getattr(settings, 'GEMINI_API_KEY', '')
+        if not api_key or api_key == 'your_gemini_api_key_here':
+            return Response(
+                {"error": "Gemini API key is not configured. Please add it to the backend .env file."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
+        # Formulate prompt based on field_type
+        if field_type == 'tagline':
+            prompt = f"You are a professional resume writer. Write a single sentence, high-impact professional tagline for a {role} profile based on this draft: '{current_text}'. Make it punchy, corporate-ready, and modern."
+        elif field_type == 'bio':
+            prompt = f"Write a professional, ATS-friendly executive summary bio (about me paragraph) for a {role} based on these notes: '{current_text}'. Write a cohesive, strong paragraph (3-4 sentences) that highlights expertise and value."
+        elif field_type == 'description':
+            prompt = f"Improve this resume or project description to make it highly professional and sound impactful. Role/Context: {role}. Current draft: '{current_text}'. Return a polished, professional description."
+        elif field_type == 'bullets':
+            prompt = f"Convert the following description into 2 to 4 high-impact resume bullet points. Role: {role}. Start each bullet point with strong action verbs (e.g. Optimized, Developed, Authored, Spearheaded). Input text: '{current_text}'."
+        elif field_type == 'ats_optimize':
+            prompt = f"Optimize the following resume section to make it highly ATS-friendly. Add standard keywords for a {role} role, improve readability, and polish the structure. Input text: '{current_text}'."
+        else:
+            prompt = f"Improve and rewrite the following professional text: '{current_text}' for a {role} profile."
+
+        # Call Gemini API with self-healing fallback models
+        models_to_try = ['gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-1.5-flash-latest']
+        suggested_text = None
+        last_error = ""
+
+        for model_name in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
+            headers = {'Content-Type': 'application/json'}
+            payload = {
+                "contents": [{
+                    "parts": [{"text": prompt}]
+                }]
+            }
+            req_data = json.dumps(payload).encode('utf-8')
+            req = urllib.request.Request(url, data=req_data, headers=headers, method='POST')
+            
+            try:
+                with urllib.request.urlopen(req, timeout=6) as response:
+                    res_data = response.read().decode('utf-8')
+                    res_json = json.loads(res_data)
+                    suggested_text = res_json['candidates'][0]['content']['parts'][0]['text'].strip()
+                    break  # Success, exit the fallback loop!
+            except urllib.error.HTTPError as e:
+                try:
+                    err_content = e.read().decode('utf-8')
+                    err_json = json.loads(err_content)
+                    err_msg = err_json.get('error', {}).get('message', '')
+                except Exception:
+                    err_msg = str(e)
+                last_error = f"{model_name} failed: {e.code} - {err_msg}"
+                # If it's a transient server issue, try the next model
+                if e.code in [404, 429, 500, 503]:
+                    continue
+                else:
+                    # If it's a fatal validation/auth issue, return immediately
+                    return Response(
+                        {"error": f"Gemini API returned an error: {e.code} - {err_msg}"},
+                        status=status.HTTP_502_BAD_GATEWAY
+                    )
+            except Exception as e:
+                last_error = f"{model_name} request failed: {str(e)}"
+                continue
+
+        if not suggested_text:
+            return Response(
+                {"error": f"Gemini API was temporarily unavailable. Last error: {last_error}"},
+                status=status.HTTP_503_SERVICE_UNAVAILABLE
+            )
+
+        # Strip markdown syntax (like backticks or code blocks) if Gemini wraps it
+        if suggested_text.startswith("```"):
+            lines = suggested_text.split('\n')
+            if lines[0].startswith("```"):
+                lines = lines[1:]
+            if lines[-1].startswith("```"):
+                lines = lines[:-1]
+            suggested_text = '\n'.join(lines).strip()
+
+        # Clean raw markdown formatting (such as double asterisks representing bold text)
+        suggested_text = suggested_text.replace("**", "").replace("__", "")
+        # Clean quotes
+        suggested_text = suggested_text.strip().strip('"\'')
+            
+        return Response({"suggested_text": suggested_text})
+

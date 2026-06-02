@@ -26,4 +26,7 @@ urlpatterns = [
     # Master Admin user management (superuser only)
     path('admin/users/', views.UserAdminListView.as_view(), name='user-admin-list'),
     path('admin/users/<int:pk>/', views.UserAdminDestroyView.as_view(), name='user-admin-destroy'),
+
+    # Gemini AI
+    path('ai/assist/', views.AIWriterView.as_view(), name='ai-assist'),
 ]

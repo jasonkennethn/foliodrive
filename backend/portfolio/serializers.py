@@ -34,9 +34,14 @@ class SectionWriteSerializer(serializers.ModelSerializer):
 
 
 class ProfileSerializer(serializers.ModelSerializer):
+    email = serializers.SerializerMethodField()
+
     class Meta:
         model = Profile
-        fields = ['id', 'name', 'custom_intro', 'role', 'location', 'tagline', 'show_profile_pic', 'profile_pic']
+        fields = ['id', 'name', 'custom_intro', 'bio', 'role', 'location', 'tagline', 'show_profile_pic', 'profile_pic', 'email']
+
+    def get_email(self, obj):
+        return obj.user.email if obj.user else ""
 
 
 class ThemeSettingsSerializer(serializers.ModelSerializer):

@@ -7,7 +7,21 @@ from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-portfolio-dev-key-change-in-production'
+# Load .env file manually if it exists
+import os
+env_path = BASE_DIR / '.env'
+if env_path.exists():
+    with open(env_path) as f:
+        for line in f:
+            if line.strip() and not line.startswith('#'):
+                parts = line.strip().split('=', 1)
+                if len(parts) == 2:
+                    key = parts[0].strip()
+                    val = parts[1].strip().strip('\'"')
+                    os.environ[key] = val
+
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-portfolio-dev-key-change-in-production')
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
 
 DEBUG = True
 

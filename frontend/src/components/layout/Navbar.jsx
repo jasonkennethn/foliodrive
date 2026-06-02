@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
+import { useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useTheme } from '../../context/ThemeContext';
 import { usePortfolio } from '../../context/PortfolioContext';
 import { FiSun, FiMoon, FiMenu, FiX } from 'react-icons/fi';
 
 export default function Navbar() {
+  const { username } = useParams();
   const { toggleTheme, resolvedTheme } = useTheme();
   const { profile, sections } = usePortfolio();
   const [scrolled, setScrolled] = useState(false);
@@ -230,6 +232,24 @@ export default function Navbar() {
               flex: '1 1 0%',
             }}
           >
+            {username && (
+              <a
+                href={`/${username}/showcase`}
+                className="btn-accent"
+                style={{
+                  textDecoration: 'none',
+                  fontSize: '12px',
+                  padding: '6px 14px',
+                  fontWeight: 700,
+                  borderRadius: 'var(--radius-full)',
+                  marginRight: '4px',
+                  boxShadow: 'var(--shadow-sm)',
+                }}
+              >
+                ATS Resume
+              </a>
+            )}
+
             <button
               onClick={toggleTheme}
               className="btn-icon"
