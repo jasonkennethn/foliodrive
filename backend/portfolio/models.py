@@ -15,6 +15,7 @@ class Profile(models.Model):
     location = models.CharField(max_length=200, default="New York, USA")
     tagline = models.CharField(max_length=500, blank=True, default='')
     show_profile_pic = models.BooleanField(default=True)
+    show_ats_button = models.BooleanField(default=True)
     profile_pic = models.ImageField(upload_to='profile/', blank=True, null=True)
 
     class Meta:
@@ -40,7 +41,7 @@ class ThemeSettings(models.Model):
         ('dark', 'Dark'),
         ('system', 'System'),
     ]
-    mode = models.CharField(max_length=10, choices=MODE_CHOICES, default='dark')
+    mode = models.CharField(max_length=10, choices=MODE_CHOICES, default='system')
     accent_color = models.CharField(max_length=7, default='#6366f1')  # Hex color
     font_family = models.CharField(max_length=100, default='Inter')
 

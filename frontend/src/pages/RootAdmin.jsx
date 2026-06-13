@@ -49,9 +49,37 @@ export default function RootAdmin() {
     setSubmitting(true);
     setErrorMsg('');
     setSuccessMsg('');
+    
+    const cleanedUsername = username.trim();
+    const reservedUsernames = [
+      'admin', 'payment', 'template', 'showcase', 'master-admin', 'root-admin',
+      'api', 'static', 'media', 'login', 'logout', 'register', 'dashboard',
+      'pricing', 'features', 'contact', 'mimi', 'help', 'support'
+    ];
+    if (/\s/.test(cleanedUsername)) {
+      setErrorMsg('Username cannot contain spaces');
+      setSubmitting(false);
+      return;
+    }
+    if (cleanedUsername.length < 3) {
+      setErrorMsg('Username must be at least 3 characters');
+      setSubmitting(false);
+      return;
+    }
+    if (!/^[a-zA-Z0-9-]+$/.test(cleanedUsername)) {
+      setErrorMsg('Only letters, numbers, and - allowed for usernames');
+      setSubmitting(false);
+      return;
+    }
+    if (reservedUsernames.includes(cleanedUsername.toLowerCase())) {
+      setErrorMsg('This username is reserved and cannot be used');
+      setSubmitting(false);
+      return;
+    }
+
     try {
       await api.post('/admin/users/', {
-        username: username.trim(),
+        username: cleanedUsername,
         email: email.trim(),
         password
       });

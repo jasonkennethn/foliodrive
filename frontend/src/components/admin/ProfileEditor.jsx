@@ -46,10 +46,12 @@ export default function ProfileEditor({ onSaved }) {
       formData.append('role', profile.role || '');
       formData.append('location', profile.location || '');
       formData.append('tagline', profile.tagline || '');
-      formData.append('show_profile_pic', profile.show_profile_pic);
+      formData.append('show_profile_pic', profile.show_profile_pic === false ? 'false' : 'true');
+      formData.append('show_ats_button', profile.show_ats_button === false ? 'false' : 'true');
       if (profile._imageFile) {
         formData.append('profile_pic', profile._imageFile);
       }
+
 
       await api.put('/profile/', formData);
       setSaved(true);
@@ -175,6 +177,28 @@ export default function ProfileEditor({ onSaved }) {
               checked={profile.show_profile_pic}
               onChange={(e) =>
                 setProfile((prev) => ({ ...prev, show_profile_pic: e.target.checked }))
+              }
+            />
+            <span className="toggle-slider" />
+          </label>
+        </div>
+
+        {/* Show ATS Resume Button toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div>
+            <span style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-primary)' }}>
+              Show ATS Resume Button
+            </span>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
+              Display the ATS Resume button on the public portfolio page
+            </p>
+          </div>
+          <label className="toggle-switch">
+            <input
+              type="checkbox"
+              checked={profile.show_ats_button ?? true}
+              onChange={(e) =>
+                setProfile((prev) => ({ ...prev, show_ats_button: e.target.checked }))
               }
             />
             <span className="toggle-slider" />

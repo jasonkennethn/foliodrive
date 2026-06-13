@@ -3,6 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { usePortfolio } from '../context/PortfolioContext';
 import { useAuth } from '../hooks/useAuth';
 import { FiFileText, FiPrinter, FiDownload, FiArrowLeft } from 'react-icons/fi';
+import PageLoader from '../components/layout/PageLoader';
+import ErrorCardPage from '../components/layout/ErrorCardPage';
 
 export default function ShowcaseResume() {
   const { username: paramUsername } = useParams();
@@ -81,21 +83,20 @@ export default function ShowcaseResume() {
   };
 
   if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifycontent: 'center', background: '#f4f4f5' }}>
-        <div style={{ width: '36px', height: '36px', border: '3px solid #e4e4e7', borderTopColor: '#6366f1', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); }}`}</style>
-      </div>
-    );
+    return <PageLoader message="Assembling ATS Resume..." />;
   }
 
   if (error || !profile) {
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#f4f4f5', padding: '24px', fontFamily: 'sans-serif' }}>
-        <h1 style={{ color: '#ef4444', fontSize: '28px', marginBottom: '12px' }}>Resume Not Found</h1>
-        <p style={{ color: '#71717a', marginBottom: '24px' }}>Could not load portfolio data for this user. Please ensure they have configured a profile.</p>
-        <Link to="/" style={{ textDecoration: 'none', background: '#6366f1', color: '#fff', padding: '10px 20px', borderRadius: '8px' }}>Go Home</Link>
-      </div>
+      <ErrorCardPage
+        errorCode="RESUME ERROR"
+        title="Resume Not Found"
+        description={`Could not load portfolio data for user "${activeUsername}". Please verify they have configured their profile.`}
+        primaryButtonText="Go to Homepage"
+        primaryButtonAction="/"
+        secondaryButtonText="Go Back"
+        secondaryButtonAction={-1}
+      />
     );
   }
 
@@ -334,8 +335,28 @@ export default function ShowcaseResume() {
         </div>
       </div>
 
-      {/* Print Specific CSS Style Rules */}
+      {/* Print & Screen Responsive Specific CSS Style Rules */}
       <style dangerouslySetInnerHTML={{ __html: `
+        @media screen and (max-width: 640px) {
+          .ats-control-bar {
+            flex-direction: column !important;
+            gap: 12px !important;
+            padding: 16px !important;
+            align-items: center !important;
+          }
+          .ats-control-bar > div {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+          .ats-resume-paper {
+            padding: 16px !important;
+          }
+        }
+        @media screen and (max-width: 480px) {
+          .ats-resume-paper {
+            padding: 12px !important;
+          }
+        }
         @media print {
           body {
             background: #ffffff !important;

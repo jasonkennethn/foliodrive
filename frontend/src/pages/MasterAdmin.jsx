@@ -9,8 +9,9 @@ import ContentBlockEditor from '../components/admin/ContentBlockEditor';
 import ThemeEditor from '../components/admin/ThemeEditor';
 import {
   FiUser, FiLayers, FiDroplet, FiLogOut, FiExternalLink,
-  FiMenu, FiX, FiFileText,
+  FiMenu, FiX, FiFileText, FiSliders, FiEye,
 } from 'react-icons/fi';
+
 
 const TABS = [
   { id: 'profile', label: 'Profile', icon: FiUser },
@@ -174,14 +175,24 @@ export default function MasterAdmin() {
           {/* Bottom actions */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid var(--border-color)', paddingTop: '16px' }}>
             <a
+              href={`/${username}?edit=true`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="admin-sidebar-item"
+              style={{ textDecoration: 'none' }}
+            >
+              <FiSliders size={18} />
+              Customize Portfolio
+            </a>
+            <a
               href={`/${username}`}
               target="_blank"
               rel="noopener noreferrer"
               className="admin-sidebar-item"
               style={{ textDecoration: 'none' }}
             >
-              <FiExternalLink size={18} />
-              View Portfolio
+              <FiEye size={18} />
+              Preview Portfolio
             </a>
             <a
               href={`/${username}/showcase`}
@@ -198,6 +209,7 @@ export default function MasterAdmin() {
               Sign Out
             </button>
           </div>
+
         </aside>
 
         {/* Desktop sidebar spacer */}

@@ -232,7 +232,7 @@ export default function Navbar() {
               flex: '1 1 0%',
             }}
           >
-            {username && (
+            {username && profile && profile.show_ats_button !== false && (
               <a
                 href={`/${username}/showcase`}
                 className="btn-accent"
@@ -249,6 +249,7 @@ export default function Navbar() {
                 ATS Resume
               </a>
             )}
+
 
             <button
               onClick={toggleTheme}

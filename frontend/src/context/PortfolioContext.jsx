@@ -13,7 +13,7 @@ export function PortfolioProvider({ children }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const { setThemeMode, setAccentColor } = useTheme();
+  const { setThemeMode, setAccentColor, setFontFamily } = useTheme();
 
   const fetchPortfolio = useCallback(async (username) => {
     try {
@@ -22,7 +22,7 @@ export function PortfolioProvider({ children }) {
       let res;
       if (username) {
         res = await api.get(`/portfolio/${username}/`);
-      } else if (sessionStorage.getItem('access_token')) {
+      } else if (localStorage.getItem('access_token')) {
         res = await api.get('/portfolio/my/');
       } else {
         setPortfolio({ profile: null, theme: null, sections: [] });
@@ -45,8 +45,12 @@ export function PortfolioProvider({ children }) {
         setThemeMode(portfolio.theme.mode || 'system');
       }
       setAccentColor(portfolio.theme.accent_color || '#6366f1');
+      if (setFontFamily) {
+        setFontFamily(portfolio.theme.font_family || 'Inter');
+      }
     }
-  }, [portfolio.theme, setThemeMode, setAccentColor]);
+  }, [portfolio.theme, setThemeMode, setAccentColor, setFontFamily]);
+
 
   const value = useMemo(
     () => ({

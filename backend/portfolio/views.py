@@ -26,13 +26,18 @@ class PortfolioPublicView(views.APIView):
         user = get_object_or_404(UserModel, username__iexact=username)
         profile, _ = Profile.objects.get_or_create(user=user, defaults={'name': user.username})
         theme, _ = ThemeSettings.objects.get_or_create(user=user)
-        sections = Section.objects.filter(user=user, is_visible=True).prefetch_related('blocks')
+        # Return all sections for the authenticated owner, but only visible sections for guests
+        if request.user.is_authenticated and request.user.username.lower() == username.lower():
+            sections = Section.objects.filter(user=user).prefetch_related('blocks')
+        else:
+            sections = Section.objects.filter(user=user, is_visible=True).prefetch_related('blocks')
 
         return Response({
             'profile': ProfileSerializer(profile).data,
             'theme': ThemeSettingsSerializer(theme).data,
             'sections': SectionSerializer(sections, many=True, context={'request': request}).data,
         })
+
 
 
 class PortfolioSelfView(views.APIView):

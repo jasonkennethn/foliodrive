@@ -38,12 +38,35 @@ function hexToHSL(hex) {
   };
 }
 
+const FONT_MAP = {
+  'Inter': "'Inter', sans-serif",
+  'Outfit': "'Outfit', sans-serif",
+  'Roboto': "'Roboto', sans-serif",
+  'Playfair Display': "'Playfair Display', serif",
+  'Plus Jakarta Sans': "'Plus Jakarta Sans', sans-serif",
+  'Montserrat': "'Montserrat', sans-serif",
+};
+
+const loadGoogleFont = (fontName) => {
+  if (!fontName) return;
+  const formattedFont = fontName.replace(/\s+/g, '+');
+  const id = `google-font-${formattedFont}`;
+  if (!document.getElementById(id)) {
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = `https://fonts.googleapis.com/css2?family=${formattedFont}:wght@300;400;500;600;700;800;900&display=swap`;
+    document.head.appendChild(link);
+  }
+};
+
 export function ThemeProvider({ children }) {
   // Enforce localStorage manual override if it exists, otherwise default to 'system'
   const [themeMode, setThemeMode] = useState(() => {
     return localStorage.getItem('user-theme-mode') || 'system';
   });
   const [accentColor, setAccentColor] = useState('#6366f1');
+  const [fontFamily, setFontFamily] = useState('Inter');
   const [resolvedTheme, setResolvedTheme] = useState('light'); // actual applied theme
 
   // Resolve the actual theme based on mode
@@ -53,6 +76,14 @@ export function ThemeProvider({ children }) {
     }
     return mode;
   }, []);
+
+  // Dynamically load font and apply it to CSS variables
+  useEffect(() => {
+    loadGoogleFont(fontFamily);
+    const cssFontValue = FONT_MAP[fontFamily] || `'${fontFamily}', sans-serif`;
+    document.documentElement.style.setProperty('--font-primary', cssFontValue);
+  }, [fontFamily]);
+
 
   // Apply theme to DOM
   useEffect(() => {
@@ -87,6 +118,10 @@ export function ThemeProvider({ children }) {
   // Dynamically update UI color variables based on accent color HSL
   useEffect(() => {
     document.documentElement.style.setProperty('--accent-color', accentColor);
+
+    // Sync Tailwind semantic accent tokens with the legacy accent color
+    document.documentElement.style.setProperty('--accent', accentColor);
+    document.documentElement.style.setProperty('--ring', accentColor);
 
     // Calculate hover color (slightly darker)
     const r = parseInt(accentColor.slice(1, 3), 16) || 0;
@@ -158,6 +193,8 @@ export function ThemeProvider({ children }) {
         resolvedTheme,
         accentColor,
         setAccentColor,
+        fontFamily,
+        setFontFamily,
         toggleTheme,
       }}
     >

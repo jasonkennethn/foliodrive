@@ -1,21 +1,71 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import api from '../api/axiosConfig';
 
 export function useAuth() {
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    () => !!sessionStorage.getItem('access_token')
-  );
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    const token = localStorage.getItem('access_token');
+    if (!token) return false;
+    
+    // Check heartbeat session timeout if loading the tab freshly
+    const isTabActive = sessionStorage.getItem('tab_active') === 'true';
+    if (!isTabActive) {
+      const lastActive = localStorage.getItem('last_active_timestamp');
+      if (lastActive) {
+        const elapsed = Date.now() - parseInt(lastActive, 10);
+        if (elapsed > 300000) { // 5 minutes in milliseconds
+          localStorage.removeItem('access_token');
+          localStorage.removeItem('refresh_token');
+          localStorage.removeItem('is_superuser');
+          localStorage.removeItem('is_staff');
+          localStorage.removeItem('username');
+          localStorage.removeItem('last_active_timestamp');
+          return false;
+        }
+      }
+    }
+    sessionStorage.setItem('tab_active', 'true');
+    return true;
+  });
+
   const [isSuperuser, setIsSuperuser] = useState(
-    () => sessionStorage.getItem('is_superuser') === 'true'
+    () => localStorage.getItem('is_superuser') === 'true'
   );
   const [isStaff, setIsStaff] = useState(
-    () => sessionStorage.getItem('is_staff') === 'true'
+    () => localStorage.getItem('is_staff') === 'true'
   );
   const [username, setUsername] = useState(
-    () => sessionStorage.getItem('username') || ''
+    () => localStorage.getItem('username') || ''
   );
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+
+  // Heartbeat - keep last_active_timestamp updated while user is active or tab is open
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
+    localStorage.setItem('last_active_timestamp', Date.now().toString());
+
+    const heartbeat = setInterval(() => {
+      localStorage.setItem('last_active_timestamp', Date.now().toString());
+    }, 10000); // every 10 seconds
+
+    const updateActivity = () => {
+      localStorage.setItem('last_active_timestamp', Date.now().toString());
+    };
+
+    window.addEventListener('mousemove', updateActivity, { passive: true });
+    window.addEventListener('keydown', updateActivity, { passive: true });
+    window.addEventListener('click', updateActivity, { passive: true });
+    window.addEventListener('scroll', updateActivity, { passive: true });
+
+    return () => {
+      clearInterval(heartbeat);
+      window.removeEventListener('mousemove', updateActivity);
+      window.removeEventListener('keydown', updateActivity);
+      window.removeEventListener('click', updateActivity);
+      window.removeEventListener('scroll', updateActivity);
+    };
+  }, [isAuthenticated]);
 
   const login = useCallback(async (usernameVal, password, requiredRole = 'staff') => {
     setLoading(true);
@@ -37,11 +87,13 @@ export function useAuth() {
         return false;
       }
 
-      sessionStorage.setItem('access_token', res.data.access);
-      sessionStorage.setItem('refresh_token', res.data.refresh);
-      sessionStorage.setItem('is_superuser', isSuper ? 'true' : 'false');
-      sessionStorage.setItem('is_staff', isStf ? 'true' : 'false');
-      sessionStorage.setItem('username', uName || '');
+      localStorage.setItem('access_token', res.data.access);
+      localStorage.setItem('refresh_token', res.data.refresh);
+      localStorage.setItem('is_superuser', isSuper ? 'true' : 'false');
+      localStorage.setItem('is_staff', isStf ? 'true' : 'false');
+      localStorage.setItem('username', uName || '');
+      localStorage.setItem('last_active_timestamp', Date.now().toString());
+      sessionStorage.setItem('tab_active', 'true');
       
       setIsAuthenticated(true);
       setIsSuperuser(isSuper);
@@ -61,11 +113,13 @@ export function useAuth() {
   }, []);
 
   const logout = useCallback(() => {
-    sessionStorage.removeItem('access_token');
-    sessionStorage.removeItem('refresh_token');
-    sessionStorage.removeItem('is_superuser');
-    sessionStorage.removeItem('is_staff');
-    sessionStorage.removeItem('username');
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('is_superuser');
+    localStorage.removeItem('is_staff');
+    localStorage.removeItem('username');
+    localStorage.removeItem('last_active_timestamp');
+    sessionStorage.removeItem('tab_active');
     setIsAuthenticated(false);
     setIsSuperuser(false);
     setIsStaff(false);
@@ -74,3 +128,4 @@ export function useAuth() {
 
   return { isAuthenticated, isSuperuser, isStaff, username, login, logout, error, loading };
 }
+

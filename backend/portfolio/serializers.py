@@ -38,10 +38,23 @@ class ProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Profile
-        fields = ['id', 'name', 'custom_intro', 'bio', 'role', 'location', 'tagline', 'show_profile_pic', 'profile_pic', 'email']
+        fields = ['id', 'name', 'custom_intro', 'bio', 'role', 'location', 'tagline', 'show_profile_pic', 'show_ats_button', 'profile_pic', 'email']
 
     def get_email(self, obj):
         return obj.user.email if obj.user else ""
+
+    def to_internal_value(self, data):
+        # Convert string representations of boolean fields to actual booleans (needed for multipart/form-data)
+        data = data.copy() if hasattr(data, 'copy') else data
+        for field in ['show_profile_pic', 'show_ats_button']:
+            if field in data:
+                val = data[field]
+                if val in ['true', 'True', '1', True]:
+                    data[field] = True
+                elif val in ['false', 'False', '0', False]:
+                    data[field] = False
+        return super().to_internal_value(data)
+
 
 
 class ThemeSettingsSerializer(serializers.ModelSerializer):
@@ -83,6 +96,32 @@ class UserSerializer(serializers.ModelSerializer):
         # Check if email exists
         if User.objects.filter(email__iexact=value).exists():
             raise serializers.ValidationError("A user with this email already exists.")
+        return value
+
+    def validate_username(self, value):
+        if not value:
+            raise serializers.ValidationError("Username is required.")
+        if any(c.isspace() for c in value):
+            raise serializers.ValidationError("Username cannot contain spaces.")
+        import re
+        if not re.match(r'^[a-zA-Z0-9-]+$', value):
+            raise serializers.ValidationError("Only letters, numbers, and - allowed for usernames.")
+        
+        # Reserved username check
+        reserved_usernames = [
+            'admin', 'payment', 'template', 'showcase', 'master-admin', 'root-admin',
+            'api', 'static', 'media', 'login', 'logout', 'register', 'dashboard',
+            'pricing', 'features', 'contact', 'mimi', 'help', 'support'
+        ]
+        if value.lower() in reserved_usernames:
+            raise serializers.ValidationError("This username is reserved and cannot be used.")
+            
+        # Duplicate check (case-insensitive)
+        from django.contrib.auth import get_user_model
+        User = get_user_model()
+        if User.objects.filter(username__iexact=value).exists():
+            raise serializers.ValidationError("This username is already taken.")
+            
         return value
 
     def create(self, validated_data):
