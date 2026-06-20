@@ -28,7 +28,7 @@ This guide walks you through deploying the Django backend for **FolioDrive** on 
 
 ## Step 2: Create a Virtual Environment
 
-Set up a virtual environment running Python 3.10+ (matching your project requirements) and install dependencies.
+Set up a virtual environment running Python 3.13 (matching your project requirements) and install dependencies.
 
 1. Navigate to your project folder:
    ```bash
@@ -36,7 +36,7 @@ Set up a virtual environment running Python 3.10+ (matching your project require
    ```
 2. Create the virtual environment:
    ```bash
-   mkvirtualenv portfolio_env --python=python3.10
+   mkvirtualenv portfolio_env --python=python3.13
    ```
    *(Note: This creates the environment and activates it. You will see `(portfolio_env)` in your prompt).*
 3. Install dependencies from `requirements.txt`:
@@ -101,7 +101,7 @@ Since we are using Supabase PostgreSQL, we need to run migrations to set up the 
 ## Step 5: Configure the Web App on PythonAnywhere
 
 1. Go to the **Web** tab on the PythonAnywhere dashboard.
-2. Click **Add a new web app** (choose **Manual Configuration** and **Python 3.10**).
+2. Click **Add a new web app** (choose **Manual Configuration** and **Python 3.13**).
 3. Set the directory configurations:
    - **Source code**: `/home/foliodrives/portfolio/backend`
    - **Working directory**: `/home/foliodrives/portfolio/backend`
