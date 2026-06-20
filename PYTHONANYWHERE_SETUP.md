@@ -10,12 +10,17 @@ This guide walks you through deploying the Django backend for **FolioDrive** on 
 
 ---
 
-## Step 1: Clone the Codebase on PythonAnywhere
+## Step 1: Clone or Update the Codebase on PythonAnywhere
 
 1. Open a **Bash Console** in your PythonAnywhere account.
-2. Clone your GitHub repository:
+2. If this is a fresh setup, clone your GitHub repository:
    ```bash
    git clone https://github.com/jasonkennethn/foliodrive.git /home/foliodrives/portfolio
+   ```
+   If the repository is already cloned and the directory exists, navigate into it and pull the latest updates instead:
+   ```bash
+   cd /home/foliodrives/portfolio
+   git pull origin main
    ```
 
 ---
