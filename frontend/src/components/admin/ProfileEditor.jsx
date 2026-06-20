@@ -11,6 +11,7 @@ export default function ProfileEditor({ onSaved }) {
   const [saved, setSaved] = useState(false);
   const [previewUrl, setPreviewUrl] = useState(null);
   const fileInputRef = useRef(null);
+  const resumeFileInputRef = useRef(null);
 
   useEffect(() => {
     fetchProfile();
@@ -50,6 +51,9 @@ export default function ProfileEditor({ onSaved }) {
       formData.append('show_ats_button', profile.show_ats_button === false ? 'false' : 'true');
       if (profile._imageFile) {
         formData.append('profile_pic', profile._imageFile);
+      }
+      if (profile._resumeFile) {
+        formData.append('resume_file', profile._resumeFile);
       }
 
 
@@ -181,6 +185,56 @@ export default function ProfileEditor({ onSaved }) {
             />
             <span className="toggle-slider" />
           </label>
+        </div>
+
+        {/* Resume PDF/Document Upload */}
+        <div>
+          <label className="label">Resume / CV Document (PDF, DOC, DOCX, TXT)</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            {profile.resume_file && (
+              <a
+                href={profile.resume_file}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontSize: '13px',
+                  fontWeight: 600,
+                  color: 'var(--accent-color)',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                }}
+              >
+                View Uploaded Resume
+              </a>
+            )}
+            <button
+              className="btn-ghost"
+              type="button"
+              onClick={() => resumeFileInputRef.current?.click()}
+              style={{ fontSize: '13px', padding: '6px 12px' }}
+            >
+              {profile.resume_file ? 'Change Resume' : 'Upload Resume'}
+            </button>
+            <input
+              ref={resumeFileInputRef}
+              type="file"
+              accept=".pdf,.doc,.docx,.txt"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  setProfile((prev) => ({ ...prev, _resumeFile: file }));
+                }
+              }}
+              style={{ display: 'none' }}
+            />
+            {profile._resumeFile && (
+              <span style={{ fontSize: '13px', color: 'var(--accent-color)', fontWeight: 600 }}>
+                Selected: {profile._resumeFile.name}
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Show ATS Resume Button toggle */}

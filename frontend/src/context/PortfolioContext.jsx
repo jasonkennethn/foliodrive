@@ -30,9 +30,9 @@ export function PortfolioProvider({ children }) {
         return;
       }
       setPortfolio(res.data);
-    } catch (err) {
+        } catch (err) {
       console.error('Failed to fetch portfolio:', err);
-      setError(err.response?.data?.error || err.message);
+      setError(err.response?.data || { message: err.message });
     } finally {
       setLoading(false);
     }

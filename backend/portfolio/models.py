@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -17,6 +18,7 @@ class Profile(models.Model):
     show_profile_pic = models.BooleanField(default=True)
     show_ats_button = models.BooleanField(default=True)
     profile_pic = models.ImageField(upload_to='profile/', blank=True, null=True)
+    resume_file = models.FileField(upload_to='profiles/resumes/', blank=True, null=True)
 
     class Meta:
         verbose_name = 'Profile'
@@ -96,6 +98,7 @@ class ContentBlock(models.Model):
     title = models.CharField(max_length=300, blank=True, default='')
     description = models.TextField(blank=True, default='')
     image = models.ImageField(upload_to='blocks/', blank=True, null=True)
+    file = models.FileField(upload_to='blocks/files/', blank=True, null=True)
     link = models.CharField(max_length=500, blank=True, default='')
 
     # --- Paragraph fields ---
@@ -136,3 +139,63 @@ class ContactRequest(models.Model):
 
     def __str__(self):
         return f"Contact Request from {self.name} ({self.email})"
+
+
+class UserAccess(models.Model):
+    """Controls whether a user's portfolio is accessible or blocked."""
+    ACCESS_TYPE_CHOICES = [
+        ('trial', 'Trial'),
+        ('paid', 'Paid'),
+        ('lifetime', 'Lifetime'),
+    ]
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='access')
+    is_active = models.BooleanField(default=True, help_text='Master switch for access')
+    access_type = models.CharField(max_length=20, choices=ACCESS_TYPE_CHOICES, default='trial')
+    expires_at = models.DateTimeField(null=True, blank=True, help_text='When access expires (null = no expiry set)')
+    blocked_by_admin = models.BooleanField(default=False, help_text='Admin can manually block access')
+    block_reason = models.CharField(max_length=500, blank=True, default='', help_text='Reason shown to user when blocked')
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'User Access'
+        verbose_name_plural = 'User Access'
+        ordering = ['-created_at']
+
+    def __str__(self):
+        status = 'Active' if self.is_access_valid() else 'Blocked'
+        return f"{self.user.username} — {self.access_type} ({status})"
+
+    def is_access_valid(self):
+        """Check if the user's portfolio access is currently valid."""
+        # Admin manual block takes highest priority
+        if self.blocked_by_admin:
+            return False
+
+        # Master switch
+        if not self.is_active:
+            return False
+
+        # Lifetime access never expires
+        if self.access_type == 'lifetime':
+            return True
+
+        # Check expiry for trial/paid
+        if self.expires_at and timezone.now() > self.expires_at:
+            return False
+
+        return True
+
+    def get_block_reason(self):
+        """Return a human-readable reason for why access is blocked."""
+        if self.blocked_by_admin:
+            return self.block_reason or 'Your portfolio access has been temporarily suspended by the administrator.'
+
+        if not self.is_active:
+            return 'Your portfolio access is currently disabled.'
+
+        if self.expires_at and timezone.now() > self.expires_at:
+            return 'Your portfolio access has expired. Please renew your subscription to restore access.'
+
+        return ''

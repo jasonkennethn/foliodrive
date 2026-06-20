@@ -5,7 +5,7 @@ import {
   LuPalette, LuZap, LuShield, LuChartColumn, LuCircleCheck,
   LuCheck, LuMail, LuUser, LuMessageSquare, LuInfo,
   LuStar, LuLock, LuChevronUp,
-  LuMic, LuVolume2, LuVolumeX, LuSend
+  LuMic, LuVolume2, LuVolumeX, LuSend, LuExternalLink
 } from 'react-icons/lu';
 import api from '../api/axiosConfig';
 
@@ -89,8 +89,42 @@ const generateMimiResponse = (query) => {
 const NAV_LINKS = [
   { href: '#features', label: 'Features' },
   { href: '#templates', label: 'Templates' },
+  { href: '#samples', label: 'Samples' },
   { href: '#pricing', label: 'Pricing' },
   { href: '#contact', label: 'Contact' },
+];
+
+const SAMPLES = [
+  {
+    name: "Alex Rivera",
+    role: "Senior Full Stack Engineer",
+    username: "alex",
+    description: "Modern minimalist portfolio showcasing production-grade distributed systems and frontend design.",
+    colors: ["#3b82f6", "#1d4ed8"],
+    accent: "#60a5fa",
+    skills: ["React", "Go", "Docker", "AWS"],
+    avatar: "AR"
+  },
+  {
+    name: "Sophia Chen",
+    role: "Product Designer & Illustrator",
+    username: "sophia",
+    description: "Immersive portfolio highlighting product strategy, visual design, and interactive mobile apps.",
+    colors: ["#ec4899", "#be185d"],
+    accent: "#f472b6",
+    skills: ["Figma", "UI/UX", "WebGL", "Branding"],
+    avatar: "SC"
+  },
+  {
+    name: "Marcus Vance",
+    role: "DevOps & Cloud Architect",
+    username: "marcus",
+    description: "Grid-based clean layout displaying cloud deployments, Kubernetes config, and automation pipelines.",
+    colors: ["#10b981", "#047857"],
+    accent: "#34d399",
+    skills: ["Kubernetes", "Terraform", "CI/CD", "Python"],
+    avatar: "MV"
+  }
 ];
 
 const FEATURES = [
@@ -562,6 +596,116 @@ export default function LandingPage() {
             <button onClick={() => scrollTo('pricing')} className="btn-outline-hover" style={{ ...btnOutline, fontSize: 14 }}>
               Customize Own Template <LuPalette size={14} style={{ marginRight: 4 }} />
             </button>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ═══════════════ PORTFOLIO SAMPLES ═══════════════ */}
+      <section id="samples" style={{ ...sectionPadding, background: C.bgSubtle, position: 'relative' }}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 1, background: `linear-gradient(90deg, transparent, ${C.borderAccent}, transparent)` }} />
+        <div style={container}>
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} variants={fadeUp}
+            style={{ textAlign: 'center', marginBottom: 64 }}>
+            <div style={sectionLabel}>Showcase</div>
+            <h2 style={sectionTitle}>Explore live portfolio samples</h2>
+            <p style={sectionDesc}>See how top professionals design their custom landing pages, projects, and work histories.</p>
+          </motion.div>
+
+          <motion.div initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }} variants={stagger}
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(280px, 100%, 320px), 1fr))', gap: 24, maxWidth: 1080, margin: '0 auto' }}>
+            {SAMPLES.map((sample, i) => (
+              <motion.div key={sample.username} variants={fadeUp} custom={i} className="pricing-card"
+                style={{
+                  position: 'relative',
+                  background: C.surface,
+                  borderRadius: 24,
+                  padding: '32px',
+                  border: `1px solid ${C.border}`,
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 20,
+                  transition: 'all 0.3s ease',
+                  overflow: 'hidden'
+                }}
+                whileHover={{ y: -6, borderColor: 'rgba(255,255,255,0.15)', boxShadow: '0 12px 30px rgba(0,0,0,0.4)' }}
+              >
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 6,
+                  background: `linear-gradient(90deg, ${sample.colors[0]}, ${sample.colors[1]})`
+                }} />
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                  <div style={{
+                    width: 48,
+                    height: 48,
+                    borderRadius: '50%',
+                    background: `linear-gradient(135deg, ${sample.colors[0]}20 0%, ${sample.colors[1]}20 100%)`,
+                    border: `1.5px solid ${sample.accent}30`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 700,
+                    fontSize: 15,
+                    color: sample.accent
+                  }}>
+                    {sample.avatar}
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, color: C.text }}>{sample.name}</h3>
+                    <p style={{ fontSize: 13, color: sample.accent, fontWeight: 600 }}>{sample.role}</p>
+                  </div>
+                </div>
+
+                <p style={{ fontSize: 13.5, color: C.textSecondary, lineHeight: 1.5, flexGrow: 1 }}>
+                  {sample.description}
+                </p>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {sample.skills.map(skill => (
+                    <span key={skill} style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      background: 'rgba(255,255,255,0.03)',
+                      color: C.textSecondary,
+                      padding: '4px 10px',
+                      borderRadius: 100,
+                      border: '1px solid rgba(255,255,255,0.05)'
+                    }}>
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+
+                <a 
+                  href={`/${sample.username}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: 8,
+                    padding: '12px',
+                    fontSize: 13.5,
+                    fontWeight: 600,
+                    color: '#fff',
+                    background: `linear-gradient(135deg, ${sample.colors[0]}d0 0%, ${sample.colors[1]}d0 100%)`,
+                    borderRadius: 12,
+                    textDecoration: 'none',
+                    transition: 'all 0.2s ease',
+                    marginTop: 8
+                  }}
+                  onMouseEnter={(e) => e.target.style.filter = 'brightness(1.15)'}
+                  onMouseLeave={(e) => e.target.style.filter = 'brightness(1.0)'}
+                >
+                  View Live Site <LuExternalLink size={14} />
+                </a>
+              </motion.div>
+            ))}
           </motion.div>
         </div>
       </section>

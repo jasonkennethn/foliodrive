@@ -130,6 +130,145 @@ export default function Portfolio() {
   }
 
   if (error) {
+    if (error.blocked) {
+      return (
+        <div 
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: `radial-gradient(circle at 10% 20%, rgba(239, 68, 68, 0.08) 0%, transparent 45%),
+                        radial-gradient(circle at 90% 80%, rgba(239, 68, 68, 0.05) 0%, transparent 45%),
+                        #0f172a`,
+            fontFamily: 'var(--font-primary)',
+            color: '#f8fafc',
+            padding: '24px',
+          }}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            style={{
+              maxWidth: '480px',
+              width: '100%',
+              background: 'rgba(30, 41, 59, 0.7)',
+              backdropFilter: 'blur(20px) saturate(180%)',
+              border: '1px solid rgba(255, 255, 255, 0.05)',
+              borderRadius: '24px',
+              padding: '40px 32px',
+              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+              textAlign: 'center',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '24px',
+            }}
+          >
+            <div 
+              style={{
+                width: '72px',
+                height: '72px',
+                borderRadius: '50%',
+                background: 'rgba(239, 68, 68, 0.12)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: '#ef4444',
+              }}
+            >
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <h1 style={{ fontSize: '24px', fontWeight: 800, letterSpacing: '-0.02em', color: '#fff' }}>
+                Access Suspended
+              </h1>
+              <p style={{ fontSize: '15px', color: '#94a3b8', lineHeight: 1.5 }}>
+                This portfolio website is currently inactive. The allocated subscription or trial period has ended, or access has been restricted by the system administrator.
+              </p>
+            </div>
+
+            {error.reason && (
+              <div 
+                style={{
+                  width: '100%',
+                  padding: '16px',
+                  background: 'rgba(239, 68, 68, 0.08)',
+                  border: '1px solid rgba(239, 68, 68, 0.15)',
+                  borderRadius: '12px',
+                  fontSize: '14px',
+                  color: '#fca5a5',
+                  fontWeight: 500,
+                  textAlign: 'left',
+                }}
+              >
+                <span style={{ fontWeight: 700, display: 'block', marginBottom: '4px', textTransform: 'uppercase', fontSize: '11px', letterSpacing: '0.05em', color: '#ef4444' }}>
+                  Reason for Suspension:
+                </span>
+                {error.reason}
+              </div>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', marginTop: '8px' }}>
+              <a 
+                href="/"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '12px 24px',
+                  fontSize: '14px',
+                  fontWeight: 600,
+                  color: '#fff',
+                  background: '#3b82f6',
+                  borderRadius: '12px',
+                  textDecoration: 'none',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => e.target.style.background = '#2563eb'}
+                onMouseLeave={(e) => e.target.style.background = '#3b82f6'}
+              >
+                Create Your Portfolio
+              </a>
+              <button 
+                onClick={() => window.history.back()}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '12px 24px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                  color: '#94a3b8',
+                  background: 'transparent',
+                  border: '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.color = '#fff';
+                  e.target.style.background = 'rgba(255,255,255,0.02)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.color = '#94a3b8';
+                  e.target.style.background = 'transparent';
+                }}
+              >
+                Go Back
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      );
+    }
+
     return (
       <ErrorCardPage
         errorCode="PORTFOLIO ERROR"

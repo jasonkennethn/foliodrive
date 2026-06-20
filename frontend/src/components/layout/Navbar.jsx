@@ -234,7 +234,9 @@ export default function Navbar() {
           >
             {username && profile && profile.show_ats_button !== false && (
               <a
-                href={`/${username}/showcase`}
+                href={profile.resume_file || `/${username}/showcase`}
+                target={profile.resume_file ? "_blank" : undefined}
+                rel={profile.resume_file ? "noopener noreferrer" : undefined}
                 className="btn-accent"
                 style={{
                   textDecoration: 'none',

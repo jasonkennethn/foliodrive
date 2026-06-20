@@ -27,6 +27,13 @@ urlpatterns = [
     path('admin/users/', views.UserAdminListView.as_view(), name='user-admin-list'),
     path('admin/users/<int:pk>/', views.UserAdminDestroyView.as_view(), name='user-admin-destroy'),
 
+    # Access Control (superuser only)
+    path('admin/access/', views.UserAccessListView.as_view(), name='access-list'),
+    path('admin/access/<int:pk>/', views.UserAccessUpdateView.as_view(), name='access-update'),
+
+    # Access Status (authenticated user — check own status)
+    path('access/status/', views.UserAccessStatusView.as_view(), name='access-status'),
+
     # Gemini AI
     path('ai/assist/', views.AIWriterView.as_view(), name='ai-assist'),
 ]

@@ -1,7 +1,11 @@
 import axios from 'axios';
 
+const BASE_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+  ? ''
+  : 'https://foliodrives.pythonanywhere.com';
+
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: `${BASE_URL}/api`,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -35,7 +39,7 @@ api.interceptors.response.use(
 
       if (refreshToken) {
         try {
-          const res = await axios.post('/api/auth/token/refresh/', {
+          const res = await axios.post(`${BASE_URL}/api/auth/token/refresh/`, {
             refresh: refreshToken,
           });
           const { access } = res.data;
@@ -51,9 +55,9 @@ api.interceptors.response.use(
       }
     }
 
-
     return Promise.reject(error);
   }
 );
 
 export default api;
+

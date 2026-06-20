@@ -4,7 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import LoginGate from '../components/admin/LoginGate';
 import api from '../api/axiosConfig';
 import {
-  FiUsers, FiPlus, FiTrash2, FiLogOut, FiExternalLink, FiMail, FiUser, FiCheck, FiX, FiLock,
+  FiUsers, FiPlus, FiTrash2, FiLogOut, FiExternalLink, FiMail, FiUser, FiCheck, FiX, FiLock, FiShield,
 } from 'react-icons/fi';
 
 export default function RootAdmin() {
@@ -21,6 +21,14 @@ export default function RootAdmin() {
   const [successMsg, setSuccessMsg] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+
+  // Access control edit states
+  const [editingAccessUserId, setEditingAccessUserId] = useState(null);
+  const [editAccessType, setEditAccessType] = useState('trial');
+  const [editExpiresAt, setEditExpiresAt] = useState('');
+  const [editBlockedByAdmin, setEditBlockedByAdmin] = useState(false);
+  const [editIsActive, setEditIsActive] = useState(true);
+  const [editBlockReason, setEditBlockReason] = useState('');
 
   useEffect(() => {
     document.title = 'Root Admin Panel — Portfolio';
@@ -120,6 +128,75 @@ export default function RootAdmin() {
       setErrorMsg(err.response?.data?.error || 'Failed to delete user.');
       setTimeout(() => setErrorMsg(''), 3000);
     }
+  };
+
+  const handleStartEditAccess = (user) => {
+    const status = user.access_status || {};
+    setEditingAccessUserId(user.id);
+    setEditAccessType(status.access_type || 'trial');
+    
+    // Format expires_at from ISO to YYYY-MM-DD
+    let dateStr = '';
+    if (status.expires_at) {
+      dateStr = status.expires_at.split('T')[0];
+    }
+    setEditExpiresAt(dateStr);
+    setEditBlockedByAdmin(!!status.blocked_by_admin);
+    setEditIsActive(status.is_active !== false); // default to true
+    setEditBlockReason(status.block_reason || '');
+  };
+
+  const handleUpdateAccess = async (accessId, updatedData) => {
+    try {
+      setSubmitting(true);
+      setErrorMsg('');
+      
+      const payload = {
+        access_type: updatedData.access_type,
+        blocked_by_admin: updatedData.blocked_by_admin,
+        is_active: updatedData.is_active,
+        block_reason: updatedData.block_reason,
+        expires_at: updatedData.expires_at ? new Date(updatedData.expires_at).toISOString() : null
+      };
+
+      await api.patch(`/admin/access/${accessId}/`, payload);
+      setSuccessMsg('Access settings updated successfully!');
+      setEditingAccessUserId(null);
+      fetchUsers();
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (err) {
+      console.error('Failed to update access:', err);
+      setErrorMsg(err.response?.data?.error || 'Failed to update access settings.');
+      setTimeout(() => setErrorMsg(''), 4000);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const getAccessBadgeStyle = (status) => {
+    if (!status) return { text: 'No Access Record', bg: 'rgba(100,116,139,0.1)', color: '#64748b' };
+    if (status.blocked_by_admin) {
+      return { text: 'Blocked by Admin', bg: 'rgba(239,68,68,0.1)', color: '#ef4444' };
+    }
+    if (!status.is_active) {
+      return { text: 'Disabled', bg: 'rgba(100,116,139,0.1)', color: '#64748b' };
+    }
+    if (status.access_type === 'lifetime') {
+      return { text: 'Lifetime', bg: 'rgba(168,85,247,0.1)', color: '#a855f7' };
+    }
+    if (status.expires_at) {
+      const expiry = new Date(status.expires_at);
+      if (new Date() > expiry) {
+        return { text: 'Expired', bg: 'rgba(239,68,68,0.1)', color: '#ef4444' };
+      }
+      const typeStr = status.access_type === 'paid' ? 'Paid' : 'Trial';
+      return { 
+        text: `${typeStr} (Active)`, 
+        bg: 'rgba(34,197,94,0.1)', 
+        color: '#22c55e' 
+      };
+    }
+    return { text: 'Active', bg: 'rgba(34,197,94,0.1)', color: '#22c55e' };
   };
 
   const handleLogout = () => {
@@ -360,14 +437,14 @@ export default function RootAdmin() {
                 No master-admin users found in the system.
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }} className="root-users-list">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }} className="root-users-list">
                 {users.map((user) => (
                   <div
                     key={user.id}
                     style={{
                       display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
+                      flexDirection: 'column',
+                      gap: '12px',
                       padding: '16px',
                       background: 'var(--bg-elevated)',
                       border: '1px solid var(--border-color)',
@@ -375,72 +452,239 @@ export default function RootAdmin() {
                     }}
                     className="root-user-row"
                   >
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontWeight: 650, color: 'var(--text-primary)', fontSize: '15px' }}>
-                          {user.username}
-                        </span>
-                        {user.is_superuser && (
-                          <span
-                            style={{
-                              fontSize: '10px',
-                              fontWeight: 700,
-                              background: 'color-mix(in srgb, var(--accent-color) 12%, transparent)',
-                              color: 'var(--accent-color)',
-                              padding: '2px 8px',
-                              borderRadius: 'var(--radius-full)',
-                              border: '1px solid color-mix(in srgb, var(--accent-color) 25%, transparent)',
-                            }}
-                          >
-                            Superuser
+                    {/* Top row: User summary details & action buttons */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                          <span style={{ fontWeight: 650, color: 'var(--text-primary)', fontSize: '15px' }}>
+                            {user.username}
                           </span>
+                          {user.is_superuser && (
+                            <span
+                              style={{
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                background: 'color-mix(in srgb, var(--accent-color) 12%, transparent)',
+                                color: 'var(--accent-color)',
+                                padding: '2px 8px',
+                                borderRadius: 'var(--radius-full)',
+                                border: '1px solid color-mix(in srgb, var(--accent-color) 25%, transparent)',
+                              }}
+                            >
+                              Superuser
+                            </span>
+                          )}
+                          {(() => {
+                            const badge = getAccessBadgeStyle(user.access_status);
+                            return (
+                              <span
+                                style={{
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  background: badge.bg,
+                                  color: badge.color,
+                                  padding: '2px 8px',
+                                  borderRadius: 'var(--radius-full)',
+                                  border: `1px solid color-mix(in srgb, ${badge.color} 20%, transparent)`,
+                                }}
+                              >
+                                {badge.text}
+                              </span>
+                            );
+                          })()}
+                        </div>
+                        <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                          {user.email}
+                        </span>
+                        {user.allocated_password && (
+                          <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <span style={{ fontWeight: 600 }}>Password:</span>
+                            <code style={{ background: 'var(--bg-surface)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-color)', color: 'var(--accent-color)' }}>
+                              {user.allocated_password}
+                            </code>
+                          </div>
                         )}
                       </div>
-                      <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                        {user.email}
-                      </span>
-                      {user.allocated_password && (
-                        <div style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <span style={{ fontWeight: 600 }}>Password:</span>
-                          <code style={{ background: 'var(--bg-elevated)', padding: '2px 6px', borderRadius: '4px', border: '1px solid var(--border-color)', color: 'var(--accent-color)' }}>
-                            {user.allocated_password}
-                          </code>
-                        </div>
-                      )}
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {user.access_status && (
+                          <button
+                            className="btn-icon"
+                            onClick={() => {
+                              if (editingAccessUserId === user.id) {
+                                setEditingAccessUserId(null);
+                              } else {
+                                handleStartEditAccess(user);
+                              }
+                            }}
+                            style={{
+                              color: editingAccessUserId === user.id ? 'var(--accent-color)' : 'var(--text-secondary)',
+                              borderColor: editingAccessUserId === user.id ? 'var(--accent-color)' : 'var(--border-color)',
+                              width: '32px',
+                              height: '32px',
+                              background: editingAccessUserId === user.id ? 'color-mix(in srgb, var(--accent-color) 8%, transparent)' : 'transparent',
+                            }}
+                            title="Manage Access"
+                          >
+                            <FiShield size={14} />
+                          </button>
+                        )}
+
+                        {deleteConfirmId === user.id ? (
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            <button
+                              className="btn-icon"
+                              onClick={() => handleDeleteUser(user.id)}
+                              style={{ background: '#ef4444', color: '#fff', width: '28px', height: '28px' }}
+                              title="Confirm delete"
+                            >
+                              <FiCheck size={14} />
+                            </button>
+                            <button
+                              className="btn-icon"
+                              onClick={() => setDeleteConfirmId(null)}
+                              style={{ width: '28px', height: '28px' }}
+                              title="Cancel delete"
+                            >
+                              <FiX size={14} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            className="btn-icon"
+                            onClick={() => setDeleteConfirmId(user.id)}
+                            style={{ color: '#ef4444', width: '32px', height: '32px' }}
+                            title="Delete account"
+                            disabled={user.is_superuser}
+                          >
+                            <FiTrash2 size={14} style={{ opacity: user.is_superuser ? 0.3 : 1 }} />
+                          </button>
+                        )}
+                      </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      {deleteConfirmId === user.id ? (
-                        <div style={{ display: 'flex', gap: '4px' }}>
+                    {/* Bottom collapsible: access controls editor */}
+                    {editingAccessUserId === user.id && user.access_status && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        style={{
+                          borderTop: '1px solid var(--border-color)',
+                          paddingTop: '16px',
+                          marginTop: '4px',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '16px',
+                          overflow: 'hidden',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <FiShield size={14} style={{ color: 'var(--accent-color)' }} />
+                          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+                            Configure User Access
+                          </span>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                          <div>
+                            <label className="label" style={{ fontSize: '11px', marginBottom: '4px' }}>Access Type</label>
+                            <select
+                              className="input-field"
+                              style={{ padding: '8px 12px', fontSize: '13px', borderRadius: 'var(--radius-sm)' }}
+                              value={editAccessType}
+                              onChange={(e) => setEditAccessType(e.target.value)}
+                            >
+                              <option value="trial">Trial</option>
+                              <option value="paid">Paid</option>
+                              <option value="lifetime">Lifetime</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="label" style={{ fontSize: '11px', marginBottom: '4px' }}>Expires At</label>
+                            <input
+                              type="date"
+                              className="input-field"
+                              style={{ padding: '7px 12px', fontSize: '13px', borderRadius: 'var(--radius-sm)' }}
+                              value={editExpiresAt}
+                              disabled={editAccessType === 'lifetime'}
+                              onChange={(e) => setEditExpiresAt(e.target.value)}
+                            />
+                          </div>
+                        </div>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', background: 'var(--bg-surface)', padding: '12px', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-color)' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div className="toggle-switch" style={{ width: '40px', height: '22px' }}>
+                              <input
+                                type="checkbox"
+                                id={`active-${user.id}`}
+                                checked={editIsActive}
+                                onChange={(e) => setEditIsActive(e.target.checked)}
+                              />
+                              <label className="toggle-slider" htmlFor={`active-${user.id}`} style={{ borderRadius: '11px' }}></label>
+                            </div>
+                            <label htmlFor={`active-${user.id}`} style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                              Access Enabled
+                            </label>
+                          </div>
+
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                            <div className="toggle-switch" style={{ width: '40px', height: '22px' }}>
+                              <input
+                                type="checkbox"
+                                id={`blocked-${user.id}`}
+                                checked={editBlockedByAdmin}
+                                onChange={(e) => setEditBlockedByAdmin(e.target.checked)}
+                              />
+                              <label className="toggle-slider" htmlFor={`blocked-${user.id}`} style={{ borderRadius: '11px' }}></label>
+                            </div>
+                            <label htmlFor={`blocked-${user.id}`} style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', cursor: 'pointer' }}>
+                              Manually Block Access (Overrides Expiration)
+                            </label>
+                          </div>
+                        </div>
+
+                        {editBlockedByAdmin && (
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <label className="label" style={{ fontSize: '11px', marginBottom: '2px' }}>Block Reason</label>
+                            <input
+                              type="text"
+                              className="input-field"
+                              style={{ padding: '8px 12px', fontSize: '13px', borderRadius: 'var(--radius-sm)' }}
+                              placeholder="Reason (e.g. Payment not received, terms violation)"
+                              value={editBlockReason}
+                              onChange={(e) => setEditBlockReason(e.target.value)}
+                            />
+                          </div>
+                        )}
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px', marginTop: '4px' }}>
                           <button
-                            className="btn-icon"
-                            onClick={() => handleDeleteUser(user.id)}
-                            style={{ background: '#ef4444', color: '#fff', width: '28px', height: '28px' }}
-                            title="Confirm delete"
+                            className="btn-ghost"
+                            style={{ padding: '6px 14px', fontSize: '12.5px', borderRadius: 'var(--radius-sm)' }}
+                            onClick={() => setEditingAccessUserId(null)}
+                            disabled={submitting}
                           >
-                            <FiCheck size={14} />
+                            Cancel
                           </button>
                           <button
-                            className="btn-icon"
-                            onClick={() => setDeleteConfirmId(null)}
-                            style={{ width: '28px', height: '28px' }}
-                            title="Cancel delete"
+                            className="btn-accent"
+                            style={{ padding: '6px 14px', fontSize: '12.5px', borderRadius: 'var(--radius-sm)' }}
+                            onClick={() => handleUpdateAccess(user.access_status.id, {
+                              access_type: editAccessType,
+                              expires_at: editExpiresAt,
+                              blocked_by_admin: editBlockedByAdmin,
+                              is_active: editIsActive,
+                              block_reason: editBlockReason,
+                            })}
+                            disabled={submitting}
                           >
-                            <FiX size={14} />
+                            {submitting ? 'Saving...' : 'Save Settings'}
                           </button>
                         </div>
-                      ) : (
-                        <button
-                          className="btn-icon"
-                          onClick={() => setDeleteConfirmId(user.id)}
-                          style={{ color: '#ef4444', width: '32px', height: '32px' }}
-                          title="Delete account"
-                          disabled={user.is_superuser} // Disable delete for superuser accounts
-                        >
-                          <FiTrash2 size={14} style={{ opacity: user.is_superuser ? 0.3 : 1 }} />
-                        </button>
-                      )}
-                    </div>
+                      </motion.div>
+                    )}
                   </div>
                 ))}
               </div>

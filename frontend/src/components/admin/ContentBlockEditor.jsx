@@ -245,6 +245,9 @@ export default function ContentBlockEditor({ section, onBack, onChanged }) {
       if (block._imageFile) {
         formData.append('image', block._imageFile);
       }
+      if (block._fileAttachment) {
+        formData.append('file', block._fileAttachment);
+      }
 
       await api.put(`/blocks/${block.id}/`, formData);
       setSaved(true);
@@ -344,6 +347,59 @@ export default function ContentBlockEditor({ section, onBack, onChanged }) {
                   }}
                   style={{ display: 'none' }}
                 />
+              </div>
+            </div>
+            <div>
+              <label className="label">File Attachment (PDF, DOCX, ZIP, etc.)</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                {block.file && (
+                  <a
+                    href={block.file}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: 'var(--accent-color)',
+                      textDecoration: 'none',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                    }}
+                  >
+                    View File Attachment
+                  </a>
+                )}
+                <button
+                  className="btn-ghost"
+                  type="button"
+                  onClick={() => {
+                    const el = document.getElementById(`block-file-input-${block.id}`);
+                    el?.click();
+                  }}
+                  style={{ fontSize: '13px', padding: '6px 12px' }}
+                >
+                  {block.file ? 'Change File' : 'Upload File'}
+                </button>
+                <input
+                  id={`block-file-input-${block.id}`}
+                  type="file"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setBlock({
+                        ...block,
+                        _fileAttachment: file,
+                      });
+                    }
+                  }}
+                  style={{ display: 'none' }}
+                />
+                {block._fileAttachment && (
+                  <span style={{ fontSize: '13px', color: 'var(--accent-color)', fontWeight: 600 }}>
+                    Selected: {block._fileAttachment.name}
+                  </span>
+                )}
               </div>
             </div>
           </>

@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { FiExternalLink } from 'react-icons/fi';
+import { FiExternalLink, FiDownload } from 'react-icons/fi';
 
 export default function CardBlock({ block }) {
   const hasImage = !!block.image;
@@ -71,6 +71,33 @@ export default function CardBlock({ block }) {
           >
             {block.description}
           </p>
+        )}
+        {block.file && (
+          <div style={{ marginTop: 'auto', paddingTop: '12px' }}>
+            <a
+              href={block.file}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="btn-ghost"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '12px',
+                padding: '6px 12px',
+                fontWeight: 600,
+                borderRadius: 'var(--radius-sm)',
+                textDecoration: 'none',
+                color: 'var(--accent-color)',
+                border: '1px solid color-mix(in srgb, var(--accent-color) 20%, transparent)',
+                background: 'color-mix(in srgb, var(--accent-color) 5%, transparent)',
+              }}
+            >
+              <FiDownload size={13} /> Download Attachment
+            </a>
+          </div>
         )}
       </div>
     </motion.div>

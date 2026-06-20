@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
-from .models import Profile, ThemeSettings, Section, ContentBlock, ContactRequest
+from .models import Profile, ThemeSettings, Section, ContentBlock, ContactRequest, UserAccess
 from .serializers import (
     ProfileSerializer,
     ThemeSettingsSerializer,
@@ -12,6 +12,7 @@ from .serializers import (
     SectionWriteSerializer,
     ContentBlockSerializer,
     ContactRequestSerializer,
+    UserAccessSerializer,
 )
 
 
@@ -24,10 +25,25 @@ class PortfolioPublicView(views.APIView):
     def get(self, request, username):
         UserModel = get_user_model()
         user = get_object_or_404(UserModel, username__iexact=username)
+
+        # Check access control — skip for the portfolio owner viewing their own site
+        is_owner = request.user.is_authenticated and request.user.username.lower() == username.lower()
+        if not is_owner:
+            try:
+                access = user.access
+                if not access.is_access_valid():
+                    return Response({
+                        'blocked': True,
+                        'reason': access.get_block_reason(),
+                        'access_type': access.access_type,
+                    }, status=status.HTTP_403_FORBIDDEN)
+            except UserAccess.DoesNotExist:
+                pass  # No access record means unrestricted (legacy user or superuser)
+
         profile, _ = Profile.objects.get_or_create(user=user, defaults={'name': user.username})
         theme, _ = ThemeSettings.objects.get_or_create(user=user)
         # Return all sections for the authenticated owner, but only visible sections for guests
-        if request.user.is_authenticated and request.user.username.lower() == username.lower():
+        if is_owner:
             sections = Section.objects.filter(user=user).prefetch_related('blocks')
         else:
             sections = Section.objects.filter(user=user, is_visible=True).prefetch_related('blocks')
@@ -237,6 +253,43 @@ class UserAdminDestroyView(generics.DestroyAPIView):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
+# ─── Access Control CRUD (Superuser only) ──────────────────────────────────
+
+class UserAccessListView(generics.ListAPIView):
+    """GET /api/admin/access/ — list all user access records (superuser only)."""
+    serializer_class = UserAccessSerializer
+    permission_classes = [IsSuperUser]
+
+    def get_queryset(self):
+        return UserAccess.objects.select_related('user').all()
+
+
+class UserAccessUpdateView(generics.RetrieveUpdateAPIView):
+    """GET/PATCH /api/admin/access/<id>/ — view or update a user's access settings (superuser only)."""
+    serializer_class = UserAccessSerializer
+    permission_classes = [IsSuperUser]
+
+    def get_queryset(self):
+        return UserAccess.objects.select_related('user').all()
+
+
+class UserAccessStatusView(views.APIView):
+    """GET /api/access/status/ — check own access status (authenticated user)."""
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        try:
+            access = request.user.access
+            return Response(UserAccessSerializer(access).data)
+        except UserAccess.DoesNotExist:
+            return Response({
+                'is_active': True,
+                'access_type': 'lifetime',
+                'is_valid': True,
+                'status_display': 'Unrestricted',
+            })
+
+
 import urllib.request
 import urllib.error
 import json
@@ -342,4 +395,3 @@ class AIWriterView(views.APIView):
         suggested_text = suggested_text.strip().strip('"\'')
             
         return Response({"suggested_text": suggested_text})
-
