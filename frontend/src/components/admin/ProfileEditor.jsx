@@ -57,7 +57,9 @@ export default function ProfileEditor({ onSaved }) {
       }
 
 
-      await api.put('/profile/', formData);
+      const res = await api.put('/profile/', formData);
+      setProfile(res.data);
+      setPreviewUrl(res.data.profile_pic);
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
       if (onSaved) onSaved();

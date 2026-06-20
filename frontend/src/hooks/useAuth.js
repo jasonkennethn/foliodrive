@@ -67,6 +67,23 @@ export function useAuth() {
     };
   }, [isAuthenticated]);
 
+  // Fetch username on mount/auth to ensure it is always populated
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    const getUsername = async () => {
+      try {
+        const res = await api.get('/access/status/');
+        if (res.data.username) {
+          localStorage.setItem('username', res.data.username);
+          setUsername(res.data.username);
+        }
+      } catch (err) {
+        console.error('Failed to sync username:', err);
+      }
+    };
+    getUsername();
+  }, [isAuthenticated]);
+
   const login = useCallback(async (usernameVal, password, requiredRole = 'staff') => {
     setLoading(true);
     setError('');
